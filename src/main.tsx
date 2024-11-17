@@ -1,13 +1,28 @@
 import "./index.css";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import { ErrorComponent } from "./components/error-copmonents";
 import Layout from "./components/layout";
+import { Toaster } from "./components/ui/toaster";
 import { ThemeProvider } from "./context/theme-provider";
-import CityPage from "./routes/city-page";
-import WeatherDashboard from "./routes/weather-dashboard";
+import { CityPage, loader as loaderCity } from "./routes/city";
+import { loader as loaderWeather, WeatherDashboard } from "./routes/weather";
+
+export const client = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 100,
+      gcTime: 10 * 60 * 1000,
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const router = createBrowserRouter([
   {
@@ -17,6 +32,8 @@ const router = createBrowserRouter([
       {
         index: true,
         Component: WeatherDashboard,
+        loader: loaderWeather,
+        errorElement: <ErrorComponent />,
       },
       {
         path: "/city",
@@ -24,6 +41,7 @@ const router = createBrowserRouter([
           {
             path: ":cityName",
             Component: CityPage,
+            loader: loaderCity,
           },
         ],
       },
@@ -33,8 +51,12 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <RouterProvider router={router} />;
-    </ThemeProvider>
-  </React.StrictMode>
+    <QueryClientProvider client={client}>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <RouterProvider router={router} />;
+        <Toaster />
+      </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  </React.StrictMode>,
 );
